@@ -46,7 +46,6 @@ Mongoid::Migration.after_migrate = ->(output, name, direction, crash) {
   upload_to_s3(name, output, direction) if crash == false
 }
 ```
->>>>>>> master
 
 # Compatibility
 
