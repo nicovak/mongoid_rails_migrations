@@ -61,7 +61,7 @@ module Mongoid #:nodoc
   #
   class Migration
     @@verbose = true
-    cattr_accessor :verbose
+    cattr_accessor :verbose, :after_migrate, :buffer_output
 
     class << self
       def up_with_benchmarks #:nodoc:
@@ -89,6 +89,12 @@ module Mongoid #:nodoc
           when :down then announce "reverted (%.4fs)" % time.real; write
         end
 
+        begin
+          @@after_migrate.call(@@buffer_output, name, direction, false) if @@after_migrate
+          @@buffer_output = nil
+        rescue => e
+          say("Error in after_migrate hook: #{e}")
+        end
         result
       end
 
@@ -112,6 +118,8 @@ module Mongoid #:nodoc
       end
 
       def write(text="")
+        @@buffer_output ||=  ""
+        @@buffer_output += text + "\n"
         puts(text) if verbose
       end
 
@@ -334,6 +342,13 @@ module Mongoid #:nodoc
           migration.migrate(@direction)
           record_version_state_after_migrating(migration.version)
         rescue => e
+          output = Migration.buffer_output + "An error has occurred, #{migration.version} and all later migrations canceled:\n\n#{e}\n#{e.backtrace.join("\n")}"
+          begin
+            Migration.after_migrate.call(output, migration.name, @direction, true) if Migration.after_migrate
+            Migration.buffer_output = nil
+          rescue => error
+            puts("Error in after_migrate hook: #{error}")
+          end
           raise StandardError, "An error has occurred, #{migration.version} and all later migrations canceled:\n\n#{e}", e.backtrace
         end
       end

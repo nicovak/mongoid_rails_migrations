@@ -12,25 +12,6 @@ Create migration
 $ rails generate mongoid:migration <your_migration_name_here>
 ```
 
-Run migrations:
-```
-$ rails db:migrate
-$ rails db:migrate:down VERSION=
-$ rails db:migrate:up VERSION=
-$ rails db:rollback
-$ rails db:rollback_to VERSION=
-$ rails db:migrate:redo
-$ rails db:migrate:reset
-$ rails db:migrate:status
-$ rails db:reseed (handled by mongoid)
-$ rails db:version
-```
-
-To override the default migrations path (`db/migrate`), add the following line to your `application.rb` file:
-```
-Mongoid::Migrator.migrations_path = ['foo/bar/db/migrate', 'path/to/db/migrate']
-```
-
 # Using along side ActiveRecord migrations
 If your rails app uses both `Mongoid` and `ActiveRecord` migrations then the migration files and rake tasks created by the two gems will cause conflict.
 In order to resolve this add the following lines to your `application.rb` file:
@@ -39,6 +20,8 @@ Mongoid::Migrator.namespace = 'db:mongoid'
 Mongoid::Migrator.migrations_path = ['db/mongoid']
 ```
 With the above changes the generated migration files will be created under the `db/mongoid` path instead of the default `db/migrate` path and the rake tasks would change to:
+
+Run migrations:
 ```
 $ rails db:mongoid:migrate
 $ rails db:mongoid:migrate:down VERSION=
@@ -51,19 +34,40 @@ $ rails db:mongoid:migrate:status
 $ rails db:mongoid:reseed (handled by mongoid)
 $ rails db:mongoid:version
 ```
-If there are pre-existing Mongoid migration files under the `db/migrate` path then they'll have to be moved manually to the new path.
+
+To override the default migrations path (`db/migrate`), add the following line to your `application.rb` file:
+```
+Mongoid::Migrator.migrations_path = ['foo/bar/db/migrate', 'path/to/db/migrate']
+```
+
+If you want to use output migration use the hook `after_migrate`
+```
+Mongoid::Migration.after_migrate = ->(output, name, direction, crash) {
+  upload_to_s3(name, output, direction) if crash == false
+}
+```
+>>>>>>> master
 
 # Compatibility
 
-* `1.2.x` targets Mongoid >= `4.0.0` and Rails >= `4.2.0`
-* `1.1.x` targets Mongoid >= `4.0.0` and Rails >= `4.2.0`
-* `1.0.0` targers Mongoid >= `3.0.0` and Rails >= `3.2.0`
-* `0.0.14` targets Mongoid >= `2.0.0` and Rails >= `3.0.0` (but < `3.2.0`)
+* `1.2.x` targets Mongoid >= `4.0` and Rails >= `4.2`
+* `1.1.x` targets Mongoid >= `4.0` and Rails >= `4.2`
+* `1.0.0` targers Mongoid >= `3.0` and Rails >= `3.2`
+* `0.0.14` targets Mongoid >= `2.0` and Rails >= `3.0` (but < `3.2`)
 
 # Changelog
 
 ## Unreleased
-[Compare master with 1.1.1](https://github.com/adacosta/mongoid_rails_migrations/compare/v1.1.1...master)
+
+## 1.4.0
+_08/01/2021_
+[Compare master with 1.3.0](https://github.com/adacosta/mongoid_rails_migrations/compare/v1.3.0...master)
+* The hook `after_migrate` can be use when migration crash (#56)
+
+## 1.3.0
+_17/12/2020_
+* Rake Tasks updated to use `migrations_path` instead of hardcoded path (#52)
+* Added `after_migrate` hook(#54)
 
 ## 1.2.1
 _17/01/2019_
